@@ -117,7 +117,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.exception(f"handle_message алдаа: {e}")
-        await _safe_reply(update, "⚠️ Алдаа гарлаа. Дараа дахин оролдоно уу.")
+        await _safe_reply(update, f"⚠️ Алдаа:\n{type(e).__name__}: {e}")    
 
 
 async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
