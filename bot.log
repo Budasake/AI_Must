@@ -1968,3 +1968,19 @@ Traceback (most recent call last):
   File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/telegram/request/_httpxrequest.py", line 303, in do_request
     raise NetworkError(f"httpx.{err.__class__.__name__}: {err}") from err
 telegram.error.NetworkError: httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+2026-05-06 15:57:13,513 - bot - INFO - PDF уншиж байна: Lecture 3 Presentation 2021.pdf
+2026-05-06 15:57:13,558 - bot - INFO - PDF уншиж байна: Lecture 13 Presentation.pdf
+2026-05-06 15:57:13,598 - bot - INFO - PDF уншиж байна: Lecture 1 Presentation 2021.pdf
+2026-05-06 15:57:13,684 - bot - INFO - PDF уншиж байна: Lecture 8 2019 Presentation.pdf
+2026-05-06 15:57:13,722 - bot - INFO - PDF уншиж байна: Lecture 7 Presentation 2021.pdf
+2026-05-06 15:57:13,776 - bot - INFO - PDF уншиж байна: Lecture 5 Presentation 2021.pdf
+2026-05-06 15:57:13,819 - bot - INFO - PDF уншиж байна: Lecture 10 2019 Presentation.pdf
+2026-05-06 15:57:13,856 - bot - INFO - PDF уншиж байна: Lecture 2 Presentation 2021.pdf
+2026-05-06 15:57:13,916 - bot - INFO - PDF уншиж байна: Lecture 12 2020 Presentation.pdf
+2026-05-06 15:57:13,955 - bot - INFO - PDF уншиж байна: Lecture 6 Presentation 2021.pdf
+2026-05-06 15:57:14,069 - bot - INFO - PDF уншиж байна: Lecture 9 2019 Presentation.pdf
+2026-05-06 15:57:14,147 - bot - INFO - PDF уншиж байна: Lecture 4 Presentation 2021.pdf
+2026-05-06 15:57:14,211 - bot - INFO - PDF уншиж байна: Lecture 11 2019 Presentation.pdf
+2026-05-06 15:57:14,259 - bot - INFO - Нийт 342 хуудас уншлаа (13 PDF файлаас).
+2026-05-06 15:57:14,276 - bot - INFO - Индекс бэлэн: 342 chunk, 9023 feature.
+2026-05-06 15:57:14,301 - bot - INFO - Бот эхэллээ.

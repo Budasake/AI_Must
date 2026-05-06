@@ -1,6 +1,8 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = logging.getLogger("bot")
 logger.setLevel(logging.INFO)
