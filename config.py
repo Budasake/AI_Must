@@ -16,8 +16,8 @@ if not logger.handlers:
     logger.addHandler(_console)
 logger.propagate = False
 
-TELEGRAM_TOKEN = "8585715138:AAEjK1bZ-32cBGJJiyyaK2eLLAyDxAgfXQA"
-GEMINI_API_KEY = "AIzaSyDgi7tLuNTGOQ9NLR6nYOIWTZ81vM70Ko0"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 LECTURE_FOLDER = os.getenv("LECTURE_FOLDER", "Lecture")
 MAX_HISTORY    = int(os.getenv("MAX_HISTORY", "20"))
 TOP_K_CHUNKS   = int(os.getenv("TOP_K_CHUNKS", "4"))
