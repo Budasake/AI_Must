@@ -1,6 +1,6 @@
 # Lecture AI Telegram Bot
 
-Mongolian lecture-PDF question answering Telegram bot using RAG (TF-IDF) + Gemini.
+Mongolian lecture-PDF question answering Telegram bot using RAG + Gemini.
 
 ## Setup (macOS)
 
