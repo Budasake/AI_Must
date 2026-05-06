@@ -3,4 +3,4 @@
 __pycache__/
 bot.log
 chroma_db/
-*.pyc
+*.pyc.env
