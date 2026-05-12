@@ -1,5 +1,7 @@
 from config import CATEGORIES
 
+NOT_FOUND_MESSAGE = "Энэ асуултын хариулт сонгосон материал дотор олдсонгүй."
+
 def build_prompt(
     context: str,
     history_text: str,
