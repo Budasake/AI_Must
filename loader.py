@@ -1,82 +1,188 @@
 import os
 import re
+from pathlib import Path
 from pypdf import PdfReader
-from config import logger, LECTURE_FOLDER
+
+from config import (
+    logger,
+    LOCAL_MATERIALS_DIR,
+    CATEGORIES,
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+)
+
+def clean_text(text: str) -> str:
+    text = text.replace("\x00", " ")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+def get_category_folder(category: str) -> Path:
+    return Path(LOCAL_MATERIALS_DIR) / category
 
 
-# =========================
-# PDF LOADING
-# =========================
+def list_pdf_files(category: str) -> list[Path]:
 
-def load_all_pdfs(folder_path: str = LECTURE_FOLDER) -> list[dict]:
-    """
-    PDF файлуудыг уншиж, metadata-тай хуудас list буцаана.
-    Returns: [{"text": "...", "source": "file.pdf", "page": 3}, ...]
-    """
-    if not os.path.exists(folder_path):
-        logger.warning(f"Лекцийн хавтас олдсонгүй: {folder_path}")
+    if category not in CATEGORIES:
+        logger.warning(f"Unknown category: {category}")
         return []
 
-    pdf_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".pdf")]
+    folder_path = get_category_folder(category)
+
+    if not folder_path.exists():
+        logger.warning(f"Category folder not found: {folder_path}")
+        return []
+
+    pdf_files = sorted(folder_path.glob("*.pdf"))
 
     if not pdf_files:
-        logger.warning(f"{folder_path} хавтаст PDF файл байхгүй.")
-        return []
+        logger.warning(f"No PDF files found in: {folder_path}")
+
+    return pdf_files
+
+
+def load_pdf_pages(file_path: Path, category: str) -> list[dict]:
 
     pages = []
-    for filename in pdf_files:
-        file_path = os.path.join(folder_path, filename)
-        logger.info(f"PDF уншиж байна: {filename}")
 
-        try:
-            reader = PdfReader(file_path)
-            for page_num, page in enumerate(reader.pages, start=1):
-                page_text = page.extract_text()
-                if page_text and page_text.strip():
+    try:
+        reader = PdfReader(str(file_path))
+
+        if reader.is_encrypted:
+            logger.warning(f"Encrypted PDF skipped: {file_path.name}")
+            return []
+
+        for page_num, page in enumerate(reader.pages, start=1):
+            try:
+                page_text = page.extract_text() or ""
+                page_text = clean_text(page_text)
+
+                if page_text:
                     pages.append({
-                        "text": page_text.strip(),
-                        "source": filename,
-                        "page": page_num
+                        "text": page_text,
+                        "source": file_path.name,
+                        "page": page_num,
+                        "category": category,
                     })
-        except Exception as e:
-            logger.error(f"{filename} уншихад алдаа: {e}")
 
-    logger.info(f"Нийт {len(pages)} хуудас уншлаа ({len(pdf_files)} PDF файлаас).")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to extract page {page_num} from {file_path.name}: {e}"
+                )
+
+    except Exception as e:
+        logger.error(f"Error reading PDF {file_path.name}: {e}", exc_info=True)
+
     return pages
 
 
-# =========================
-# SMART CHUNKING
-# =========================
+def load_pdfs_by_category(category: str) -> list[dict]:
 
-def split_page_into_chunks(page_data: dict, chunk_size: int = 800, overlap: int = 150) -> list[dict]:
-    """Нэг хуудасны текстийг параграфаар ухаалаг хуваана."""
-    text   = page_data["text"]
-    source = page_data["source"]
-    page   = page_data["page"]
+    pdf_files = list_pdf_files(category)
+    pages = []
 
-    paragraphs = [p.strip() for p in re.split(r'\n{2,}', text) if p.strip()]
+    for pdf_file in pdf_files:
+        logger.info(f"Reading PDF: {category}/{pdf_file.name}")
+        pages.extend(load_pdf_pages(pdf_file, category))
+
+    logger.info(
+        f"{category}: loaded {len(pages)} text pages from {len(pdf_files)} PDF files."
+    )
+
+    return pages
+
+
+def split_long_text(text: str, chunk_size: int, overlap: int) -> list[str]:
+
     chunks = []
-    current_chunk = ""
+    start = 0
 
-    for para in paragraphs:
-        if len(current_chunk) + len(para) + 2 <= chunk_size:
-            current_chunk += para + "\n\n"
-        else:
-            if current_chunk.strip():
-                chunks.append({"text": current_chunk.strip(), "source": source, "page": page})
-            overlap_text  = current_chunk[-overlap:] if len(current_chunk) > overlap else current_chunk
-            current_chunk = overlap_text + para + "\n\n"
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end].strip()
 
-    if current_chunk.strip():
-        chunks.append({"text": current_chunk.strip(), "source": source, "page": page})
+        if chunk:
+            chunks.append(chunk)
+
+        start += max(chunk_size - overlap, 1)
 
     return chunks
 
 
-def build_chunks(pages: list[dict]) -> list[dict]:
-    """Бүх хуудсыг chunk-үүдэд хуваана."""
+def split_page_into_chunks(page_data: dict) -> list[dict]:
+
+    text = page_data["text"]
+    source = page_data["source"]
+    page = page_data["page"]
+    category = page_data["category"]
+
+    paragraphs = [
+        paragraph.strip()
+        for paragraph in re.split(r"\n{2,}", text)
+        if paragraph.strip()
+    ]
+
+    chunks = []
+    current_chunk = ""
+
+    for paragraph in paragraphs:
+        # If one paragraph is too long, split it directly.
+        if len(paragraph) > CHUNK_SIZE:
+            if current_chunk.strip():
+                chunks.append(current_chunk.strip())
+                current_chunk = ""
+
+            chunks.extend(split_long_text(paragraph, CHUNK_SIZE, CHUNK_OVERLAP))
+            continue
+
+        if len(current_chunk) + len(paragraph) + 2 <= CHUNK_SIZE:
+            current_chunk += paragraph + "\n\n"
+        else:
+            if current_chunk.strip():
+                chunks.append(current_chunk.strip())
+
+            overlap_text = (
+                current_chunk[-CHUNK_OVERLAP:]
+                if len(current_chunk) > CHUNK_OVERLAP
+                else current_chunk
+            )
+
+            current_chunk = overlap_text + paragraph + "\n\n"
+
+    if current_chunk.strip():
+        chunks.append(current_chunk.strip())
+
+    return [
+        {
+            "text": chunk,
+            "source": source,
+            "page": page,
+            "category": category,
+        }
+        for chunk in chunks
+        if chunk.strip()
+    ]
+
+
+def build_chunks_for_category(category: str) -> list[dict]:
+
+    pages = load_pdfs_by_category(category)
+
     all_chunks = []
+
     for page in pages:
         all_chunks.extend(split_page_into_chunks(page))
+
+    logger.info(f"{category}: created {len(all_chunks)} chunks.")
+
     return all_chunks
+
+
+def load_all_categories() -> dict[str, list[dict]]:
+
+    data = {}
+
+    for category in CATEGORIES:
+        data[category] = build_chunks_for_category(category)
+
+    return data

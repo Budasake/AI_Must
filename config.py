@@ -2,36 +2,90 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
+
+
 load_dotenv()
 
 logger = logging.getLogger("bot")
 logger.setLevel(logging.INFO)
-_fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-_file = RotatingFileHandler("bot.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8")
-_file.setFormatter(_fmt)
-_console = logging.StreamHandler()
-_console.setFormatter(_fmt)
+_log_format = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+file_handler = RotatingFileHandler(
+    "bot.log",
+    maxBytes=1_000_000,
+    backupCount=3,
+    encoding="utf-8"
+)
+file_handler.setFormatter(_log_format)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(_log_format)
 
 if not logger.handlers:
-    logger.addHandler(_file)
-    logger.addHandler(_console)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
 logger.propagate = False
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-LECTURE_FOLDER = os.getenv("LECTURE_FOLDER", "Lecture")
-MAX_HISTORY    = int(os.getenv("MAX_HISTORY", "20"))
-TOP_K_CHUNKS   = int(os.getenv("TOP_K_CHUNKS", "4"))
-MIN_SIMILARITY = float(os.getenv("MIN_SIMILARITY", "0.08"))
+
+def get_required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise ValueError(f"{name} тохируулагдаагүй байна.")
+    return value
+
+
+def get_int_env(name: str, default: int) -> int:
+    value = os.getenv(name, str(default))
+
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning(f"{name} must be integer. Using default: {default}")
+        return default
+
+
+def get_float_env(name: str, default: float) -> float:
+    value = os.getenv(name, str(default))
+
+    try:
+        return float(value)
+    except ValueError:
+        logger.warning(f"{name} must be float. Using default: {default}")
+        return default
+
+
+TELEGRAM_TOKEN = get_required_env("TELEGRAM_TOKEN")
+GEMINI_API_KEY = get_required_env("GEMINI_API_KEY")
+
+
+LOCAL_MATERIALS_DIR = os.getenv("LOCAL_MATERIALS_DIR", "Materials")
+
+CATEGORIES = {
+    "class_info": "🏫 Course Info",
+    "lectures": "📚 Lecture",
+    "labs": "🧪 Laboratory",
+}
+
+MAX_HISTORY = get_int_env("MAX_HISTORY", 20)
+TOP_K_CHUNKS = get_int_env("TOP_K_CHUNKS", 4)
+MIN_SIMILARITY = get_float_env("MIN_SIMILARITY", 0.08)
+
+CHUNK_SIZE = get_int_env("CHUNK_SIZE", 900)
+CHUNK_OVERLAP = get_int_env("CHUNK_OVERLAP", 150)
 
 GEMINI_MODELS = [
-    "gemini-2.5-flash",
     "gemini-2.0-flash",
-    "gemini-3-flash-preview",
+    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash",
 ]
 
-if not TELEGRAM_TOKEN:
-    raise ValueError("TELEGRAM_TOKEN тохируулагдаагүй байна.")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY тохируулагдаагүй байна.")
+TELEGRAM_MAX_MESSAGE_LENGTH = 4096
+
+logger.info("Config loaded successfully.")
+logger.info(f"Materials folder: {LOCAL_MATERIALS_DIR}")
+logger.info(f"Categories: {list(CATEGORIES.keys())}")
+logger.info(f"TOP_K_CHUNKS={TOP_K_CHUNKS}, MIN_SIMILARITY={MIN_SIMILARITY}")
