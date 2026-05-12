@@ -62,7 +62,7 @@ TELEGRAM_TOKEN = get_required_env("TELEGRAM_TOKEN")
 GEMINI_API_KEY = get_required_env("GEMINI_API_KEY")
 
 
-LOCAL_MATERIALS_DIR = os.getenv("LOCAL_MATERIALS_DIR", "Materials")
+LOCAL_MATERIALS_DIR = os.getenv("LOCAL_MATERIALS_DIR", "materials")
 
 CATEGORIES = {
     "class_info": "🏫 Course Info",
@@ -86,6 +86,6 @@ GEMINI_MODELS = [
 TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 
 logger.info("Config loaded successfully.")
-logger.info(f"Materials folder: {LOCAL_MATERIALS_DIR}")
+logger.info(f"materials folder: {LOCAL_MATERIALS_DIR}")
 logger.info(f"Categories: {list(CATEGORIES.keys())}")
 logger.info(f"TOP_K_CHUNKS={TOP_K_CHUNKS}, MIN_SIMILARITY={MIN_SIMILARITY}")
