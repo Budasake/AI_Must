@@ -72,7 +72,7 @@ GEMINI_API_KEY = get_required_env("GEMINI_API_KEY")
 
 LOCAL_MATERIALS_DIR = os.getenv("LOCAL_MATERIALS_DIR", "materials")
 
-USE_GOOGLE_DRIVE = get_bool_env("USE_GOOGLE_DRIVE", False)
+USE_GOOGLE_DRIVE = os.getenv("USE_GOOGLE_DRIVE", "false").lower() == "true"
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv(
     "GOOGLE_APPLICATION_CREDENTIALS",
     "service-account.json"
