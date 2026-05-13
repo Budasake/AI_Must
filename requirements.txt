@@ -42,8 +42,5 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.6.3
 websockets==16.0
-python-telegram-bot==22.7
-google-genai==1.75.0
-pypdf==6.10.2
-python-dotenv==1.2.2
-scikit-learn==1.8.0
+google-api-python-client
+google-auth
