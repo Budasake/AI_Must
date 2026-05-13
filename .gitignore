@@ -1,6 +1,8 @@
+service-account.json
 .env
 .venv/
 __pycache__/
 bot.log
 chroma_db/
 *.pyc.env
+
