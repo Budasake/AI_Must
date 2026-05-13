@@ -9,7 +9,11 @@ from config import (
     CATEGORIES,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
+    USE_GOOGLE_DRIVE,
 )
+
+from drive_loader import download_drive_pdfs_by_category
+
 
 def clean_text(text: str) -> str:
     text = text.replace("\x00", " ")
@@ -17,32 +21,36 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
-def get_category_folder(category: str) -> Path:
-    return Path(LOCAL_MATERIALS_DIR) / category
 
-
-def list_pdf_files(category: str) -> list[Path]:
-
-    if category not in CATEGORIES:
-        logger.warning(f"Unknown category: {category}")
-        return []
-
-    folder_path = get_category_folder(category)
+def get_local_pdf_files(category: str) -> list[Path]:
+    folder_path = Path(LOCAL_MATERIALS_DIR) / category
 
     if not folder_path.exists():
-        logger.warning(f"Category folder not found: {folder_path}")
+        logger.warning(f"Local category folder not found: {folder_path}")
         return []
 
     pdf_files = sorted(folder_path.glob("*.pdf"))
 
     if not pdf_files:
-        logger.warning(f"No PDF files found in: {folder_path}")
+        logger.warning(f"No local PDF files found in: {folder_path}")
 
     return pdf_files
 
 
-def load_pdf_pages(file_path: Path, category: str) -> list[dict]:
+def get_pdf_files_for_category(category: str) -> list[Path]:
+    if category not in CATEGORIES:
+        logger.warning(f"Unknown category: {category}")
+        return []
 
+    if USE_GOOGLE_DRIVE:
+        logger.info(f"Using Google Drive PDFs for category: {category}")
+        return download_drive_pdfs_by_category(category)
+
+    logger.info(f"Using local PDFs for category: {category}")
+    return get_local_pdf_files(category)
+
+
+def load_pdf_pages(file_path: Path, category: str) -> list[dict]:
     pages = []
 
     try:
@@ -77,8 +85,8 @@ def load_pdf_pages(file_path: Path, category: str) -> list[dict]:
 
 
 def load_pdfs_by_category(category: str) -> list[dict]:
+    pdf_files = get_pdf_files_for_category(category)
 
-    pdf_files = list_pdf_files(category)
     pages = []
 
     for pdf_file in pdf_files:
@@ -92,8 +100,8 @@ def load_pdfs_by_category(category: str) -> list[dict]:
     return pages
 
 
-def split_long_text(text: str, chunk_size: int, overlap: int) -> list[str]:
 
+def split_long_text(text: str, chunk_size: int, overlap: int) -> list[str]:
     chunks = []
     start = 0
 
@@ -110,7 +118,6 @@ def split_long_text(text: str, chunk_size: int, overlap: int) -> list[str]:
 
 
 def split_page_into_chunks(page_data: dict) -> list[dict]:
-
     text = page_data["text"]
     source = page_data["source"]
     page = page_data["page"]
@@ -126,7 +133,6 @@ def split_page_into_chunks(page_data: dict) -> list[dict]:
     current_chunk = ""
 
     for paragraph in paragraphs:
-        # If one paragraph is too long, split it directly.
         if len(paragraph) > CHUNK_SIZE:
             if current_chunk.strip():
                 chunks.append(current_chunk.strip())
@@ -165,7 +171,6 @@ def split_page_into_chunks(page_data: dict) -> list[dict]:
 
 
 def build_chunks_for_category(category: str) -> list[dict]:
-
     pages = load_pdfs_by_category(category)
 
     all_chunks = []
@@ -179,7 +184,6 @@ def build_chunks_for_category(category: str) -> list[dict]:
 
 
 def load_all_categories() -> dict[str, list[dict]]:
-
     data = {}
 
     for category in CATEGORIES:
